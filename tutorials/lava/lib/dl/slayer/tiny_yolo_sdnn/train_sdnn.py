@@ -89,7 +89,7 @@ if __name__ == '__main__':
     print('Using GPUs {}'.format(args.gpu))
     device = torch.device('cuda:{}'.format(args.gpu[0]))
 
-    classes_output = {'BDD100K': 11, 'DSIAC': 10}
+    classes_output = {'BDD100K': 11, 'DSIAC': 10, 'zentis': 1}
 
     print('Creating Network')
     if args.model == 'tiny_yolov3_str':
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         print(f'Initializing model from {saved_model}')
         module.load_model(saved_model)
 
-    module.init_model((448, 448))
+    module.init_model((448, 448, 3))
 
     # Define optimizer module.
     print('Creating Optimizer')
@@ -157,6 +157,29 @@ if __name__ == '__main__':
                                     train=True, augment_prob=args.aug_prob,
                                     randomize_seq=True)
         test_set = obd.dataset.BDD(root=args.path, dataset='track',
+                                   train=False, randomize_seq=True)
+        train_loader = DataLoader(train_set,
+                                  batch_size=args.b,
+                                  shuffle=True,
+                                  collate_fn=yolo_target.collate_fn,
+                                  num_workers=args.num_workers,
+                                  pin_memory=True)
+        test_loader = DataLoader(test_set,
+                                 batch_size=args.b,
+                                 shuffle=True,
+                                 collate_fn=yolo_target.collate_fn,
+                                 num_workers=args.num_workers,
+                                 pin_memory=True)
+
+        box_color_map = [(np.random.randint(256),
+                          np.random.randint(256),
+                          np.random.randint(256))
+                         for i in range(11)]
+    elif args.dataset == 'zentis':
+        train_set = obd.dataset.Zentis(root=args.path, dataset='track',
+                                    train=True, augment_prob=args.aug_prob,
+                                    randomize_seq=True)
+        test_set = obd.dataset.Zentis(root=args.path, dataset='track',
                                    train=False, randomize_seq=True)
         train_loader = DataLoader(train_set,
                                   batch_size=args.b,
